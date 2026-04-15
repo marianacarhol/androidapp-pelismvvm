@@ -8,7 +8,7 @@ class PeliculaViewModelFactory(private val repo: PeliculaRepositorio): ViewModel
 
     override fun <T: ViewModel> create(modelClass: Class<T>): T{
 
-        if(modelClass.isAssignableFrom(UsuarioViewModel::class.java)){
+        if(modelClass.isAssignableFrom(PeliculaViewModel::class.java)){
             return PeliculaViewModel(repo) as T
         }
         throw IllegalArgumentException("Desconocido")
