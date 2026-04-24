@@ -19,4 +19,18 @@ class PeliculaRepositorio {
     fun agregarPeliculas(pelicula: Pelicula) {
         peliculas.add(pelicula)
     }
+
+    fun editarPeliculas(pelicula: Pelicula) {
+        val indice = peliculas.indexOfFirst {it.id == pelicula.id}
+
+        if(indice != -1){
+            peliculas[indice] = pelicula
+        }
+
+        for (peli in peliculas){
+            if(peli.id == pelicula.id){
+
+            }
+        }
+    }
 }

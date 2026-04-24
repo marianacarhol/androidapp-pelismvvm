@@ -1,5 +1,6 @@
 package carrillo.mariana.peliculasapp.viewmodels
 
+import android.R.attr.id
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -34,5 +35,12 @@ class PeliculaViewModel(val repo: PeliculaRepositorio): ViewModel() {
         val lista = _peliculas.value.toMutableList()
         lista.remove(pelicula)
         _peliculas.value = lista
+    }
+
+    fun editarPelicula(id: Int, titulo: String, categoria: String, duracion: String, sinopsis: String, fotoUri: String?){
+        val peli = Pelicula(id, titulo, categoria, duracion, sinopsis, R.drawable.perfil, fotoUri)
+        repo.editarPeliculas(peli)
+
+        _peliculas.value = repo.getPeliculas()
     }
 }

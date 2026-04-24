@@ -39,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import carrillo.mariana.peliculasapp.modelos.Pelicula
 import carrillo.mariana.peliculasapp.viewmodels.PeliculaViewModel
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
@@ -50,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
+import carrillo.mariana.peliculasapp.modelos.Usuario
 import coil3.compose.AsyncImage
 import org.jetbrains.annotations.Async
 
@@ -59,6 +62,7 @@ fun PeliculaScreen(viewModel: PeliculaViewModel){
     var mostrarDialogo by remember {mutableStateOf(false)  }
     val context = LocalContext.current
 
+    var pelicula_editar by remember {mutableStateOf<Pelicula?>(null)}
     Scaffold(
 
         floatingActionButton = {
@@ -84,8 +88,8 @@ fun PeliculaScreen(viewModel: PeliculaViewModel){
             items(peliculas){ pelicula ->
                 PeliculaCard(
                     pelicula = pelicula,
-                    onEliminar = { viewModel.eliminaPelicula(pelicula) }
-                )
+                    onEliminar = { viewModel.eliminaPelicula(pelicula) },
+                    onLongClick = { pelicula_editar = pelicula })
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -101,12 +105,26 @@ fun PeliculaScreen(viewModel: PeliculaViewModel){
         )
     }
 
+    pelicula_editar?.let {pelicula ->
+        EditarPeliculaDialog(
+            pelicula = pelicula,
+            onDismiss = {pelicula_editar = null},
+            onConfirm = {id, titulo, categoria, duracion, sinopsis, fotoUri ->
+                viewModel.editarPelicula(id, titulo, categoria, duracion, sinopsis, fotoUri)
+                pelicula_editar = null
+            }
+        )
+    }
 }
 
 @Composable
-fun PeliculaCard(pelicula: Pelicula, onEliminar: () -> Unit){
+fun PeliculaCard(pelicula: Pelicula, onEliminar: () -> Unit, onLongClick:() -> Unit){
     Card(
         modifier = Modifier.fillMaxSize()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongClick
+            )
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -240,6 +258,115 @@ fun AgregarPeliculaDialog(
                 }
             ) {
                 Text("Agregar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+
+
+    )
+}
+
+@Composable
+fun EditarPeliculaDialog(
+    pelicula: Pelicula,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, String, String, String, String, String?) -> Unit
+){
+
+    var foto by remember { mutableStateOf<Uri?>(pelicula.fotoUri?.let {Uri.parse(it)}) }
+    var titulo by remember { mutableStateOf(pelicula.titulo) }
+    var categoria by remember { mutableStateOf(pelicula.categoria) }
+    var duracion by remember { mutableStateOf(pelicula.duracion) }
+    var sinopsis by remember { mutableStateOf(pelicula.sinopsis) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract =    ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        foto  = uri
+
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {Text("Editar Película")},
+        text = {
+            Column {
+
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray)
+                        .clickable {
+                            launcher.launch("image/*")
+                        },
+                    contentAlignment = Alignment.Center
+                ){
+                    if(foto != null){
+                        AsyncImage(
+                            model = foto,
+                            contentDescription = "Avatar",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }else{
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Elegir Foto",
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Toca para elegir foto", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = titulo,
+                    onValueChange = { titulo = it},
+                    label = { Text("Titulo") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = categoria,
+                    onValueChange = { categoria = it },
+                    label = { Text("Categoria") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = duracion,
+                    onValueChange = { duracion = it },
+                    label = { Text("Duracion") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = sinopsis,
+                    onValueChange = { sinopsis = it },
+                    label = { Text("Sinopsis") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (titulo.isNotBlank()) {
+                        onConfirm (pelicula.id, titulo, categoria, duracion, sinopsis, foto?.toString())
+                    }
+                }
+            ) {
+                Text("Editar")
             }
         },
         dismissButton = {
